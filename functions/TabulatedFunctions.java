@@ -165,6 +165,60 @@ public class TabulatedFunctions {
         return createTabulatedFunction(leftX, rightX, values);
     }
 
+    
+    // Ввод табулированной функции из байтового потока с использованием рефлексии
+    public static TabulatedFunction inputTabulatedFunction(Class<?> functionClass, InputStream in) throws IOException {
+        if (!TabulatedFunction.class.isAssignableFrom(functionClass)){
+            throw new IllegalArgumentException("Класс " + functionClass.getName() + 
+            " не реализует интерфейс TabulatedFunction");
+        }
+
+        DataInputStream dataIn = new DataInputStream(in);
+        // Читаем кол-во точек
+        int pointsCount = dataIn.readInt();
+
+        // Читаем координаты точек
+        double[] xValues = new double[pointsCount];
+        double[] yValues = new double[pointsCount];
+
+        for (int i = 0; i < pointsCount; ++i) {
+            xValues[i] = dataIn.readDouble();
+            yValues[i] = dataIn.readDouble();
+        }
+
+        // Используем рефлексивное создание
+        return createTabulatedFunction(functionClass, xValues, yValues);
+    }
+    
+    // Чтение табулированной функции из символьного потока с использованием рефлексии
+    public static TabulatedFunction readTabulatedFunction(Class<?> functionClass, Reader in) throws IOException {
+        if (!TabulatedFunction.class.isAssignableFrom(functionClass)) {
+        throw new IllegalArgumentException("Класс " + functionClass.getName() + 
+                                         " не реализует интерфейс TabulatedFunction");
+        }
+    
+        StreamTokenizer tokenizer = new StreamTokenizer(in);
+
+        // Читаем кол-во точек
+        tokenizer.nextToken();
+        int pointsCount = (int) tokenizer.nval;
+
+        // Читаем координаты точек
+        double[] xValues = new double[pointsCount];
+        double[] yValues = new double[pointsCount];
+        
+        for (int i = 0; i < pointsCount; i++) {
+            tokenizer.nextToken(); // x координата
+            xValues[i] = tokenizer.nval;
+            
+            tokenizer.nextToken(); // y координата  
+            yValues[i] = tokenizer.nval;
+        }
+        
+        // Используем рефлексивное создание
+        return createTabulatedFunction(functionClass, xValues, yValues);
+    }
+    
     // ------------------- ЗАДАНИЕ 7 --------------------
 
     // Вывод табулированной функции в байтовый поток
@@ -272,5 +326,32 @@ public class TabulatedFunctions {
             points[i] = new FunctionPoint(xValues[i], yValues[i]);
         }
         return createTabulatedFunction(points);
+    }
+
+
+    // Вспомогательный метод для создания из массивов x и y через рефлексию
+    private static TabulatedFunction createTabulatedFunction(Class<?> functionClass, 
+                                                        double[] xValues, double[] yValues) {
+        // Проверяем, что массивы одинаковой длины
+        if (xValues.length != yValues.length) {
+            throw new IllegalArgumentException("Массивы x и y должны быть одинаковой длины");
+        }
+        if (xValues.length < 2) {
+            throw new IllegalArgumentException("Количество точек должно быть не меньше 2");
+        }
+        
+        // Проверяем упорядоченность x
+        for (int i = 1; i < xValues.length; i++) {
+            if (xValues[i] <= xValues[i - 1]) {
+                throw new IllegalArgumentException("Точки должны быть упорядочены по возрастанию x");
+            }
+        }
+        
+        // Создаем массив точек и используем рефлексивное создание
+        FunctionPoint[] points = new FunctionPoint[xValues.length];
+        for (int i = 0; i < xValues.length; i++) {
+            points[i] = new FunctionPoint(xValues[i], yValues[i]);
+        }
+        return createTabulatedFunction(functionClass, points);
     }
 }

@@ -1,3 +1,9 @@
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+
 import functions.*;
 import functions.basic.*;
 
@@ -7,7 +13,8 @@ public class Main {
     public static void main(String[] args){
         //testIterator();
         // testFactory();
-        testReflection();
+        // testReflection();
+        testReflectionIO();
     } 
 
     public static void testReflection() {
@@ -143,7 +150,66 @@ public class Main {
         }
     }
 
-
+    public static void testReflectionIO() {
+        System.out.println("=== Тестирование рефлексивного чтения объектов ===");
+        
+        try {
+            // Тест 1: Запись в байтовый поток и чтение через рефлексию
+            System.out.println("\n1. Тест байтового потока:");
+            
+            // Создаем тестовую функцию и записываем в поток
+            TabulatedFunction original = new ArrayTabulatedFunction(0, 10, new double[]{0, 5, 10});
+            ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+            TabulatedFunctions.outputTabulatedFunction(original, byteOut);
+            
+            // Читаем через рефлексию как LinkedListTabulatedFunction
+            ByteArrayInputStream byteIn = new ByteArrayInputStream(byteOut.toByteArray());
+            TabulatedFunction readFunction = TabulatedFunctions.inputTabulatedFunction(
+                LinkedListTabulatedFunction.class, byteIn);
+            
+            System.out.println("   Оригинал: " + original.getClass().getSimpleName());
+            System.out.println("   Прочитано: " + readFunction.getClass().getSimpleName());
+            System.out.println("   Данные: " + readFunction);
+            
+            // Тест 2: Запись в символьный поток и чтение через рефлексию
+            System.out.println("\n2. Тест символьного потока:");
+            
+            // Создаем другую функцию
+            TabulatedFunction original2 = new LinkedListTabulatedFunction(
+                new FunctionPoint[]{new FunctionPoint(1, 1), new FunctionPoint(2, 4), new FunctionPoint(3, 9)}
+            );
+            StringWriter writer = new StringWriter();
+            TabulatedFunctions.writeTabulatedFunction(original2, writer);
+            
+            // Читаем через рефлексию как ArrayTabulatedFunction
+            StringReader reader = new StringReader(writer.toString());
+            TabulatedFunction readFunction2 = TabulatedFunctions.readTabulatedFunction(
+                ArrayTabulatedFunction.class, reader);
+            
+            System.out.println("   Оригинал: " + original2.getClass().getSimpleName());
+            System.out.println("   Прочитано: " + readFunction2.getClass().getSimpleName());
+            System.out.println("   Данные: " + readFunction2);
+            
+            // Тест 3: Проверка корректности данных
+            System.out.println("\n3. Проверка корректности данных:");
+            boolean dataCorrect = true;
+            for (int i = 0; i < original2.getPointsCount(); i++) {
+                if (Math.abs(original2.getPointX(i) - readFunction2.getPointX(i)) > 1e-10 ||
+                    Math.abs(original2.getPointY(i) - readFunction2.getPointY(i)) > 1e-10) {
+                    dataCorrect = false;
+                    break;
+                }
+            }
+            System.out.println("   Данные сохранены корректно: " + dataCorrect);
+            
+        } catch (IOException e) {
+            System.out.println("   Ошибка ввода-вывода: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("   Неожиданная ошибка: " + e.getMessage());
+        }
+        
+        System.out.println("\n=== Тестирование рефлексивного чтения завершено ===");
+    }
 }
 
     
